@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- リアルタイム字幕・翻訳・要約のロゴ。左の音声の波形が、矢印を経て右の 3 本の文字の行 (日本語字幕、英語字幕、概要) に変わる -->
+  <rect width="512" height="512" rx="112" fill="#0f766e"/>
+  <g fill="#ccfbf1">
+    <rect x="72" y="226" width="24" height="60" rx="12"/>
+    <rect x="112" y="186" width="24" height="140" rx="12"/>
+    <rect x="152" y="146" width="24" height="220" rx="12"/>
+    <rect x="192" y="196" width="24" height="120" rx="12"/>
+  </g>
+  <path d="M244 236h40v-24l40 44-40 44v-24h-40z" fill="#fde68a"/>
+  <rect x="340" y="176" width="112" height="28" rx="14" fill="#ffffff"/>
+  <rect x="340" y="242" width="92" height="28" rx="14" fill="#fde68a"/>
+  <rect x="340" y="308" width="72" height="28" rx="14" fill="#99f6e4"/>
+</svg>

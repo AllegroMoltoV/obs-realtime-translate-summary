@@ -126,11 +126,11 @@ cmake --build --preset windows-x64
 
 ### 日本語
 
-このプラグインの制作では、Anthropic Claude Code を、要件の調査、ソースコード、ビルドの設定、テスト、文書を含むほぼすべての工程で使用しました。作者本人は Windows 上の OBS Studio でユーザーテストを実施しました。コードの読解による厳密な人間のレビューは実施していません。
+このプラグインの制作では、Anthropic Claude Code を、要件の調査、ソースコード、ビルドの設定、テスト、文書を含むほぼすべての工程で使用しました。作者本人は Windows 上の OBS Studio でユーザーテストを実施しました。コードの読解による厳密な人間のレビューは実施していません。ロゴは、Claude Code が SVG で作った 3 つの案から作者が選んだものです。原本は [logo.svg](docs/images/logo.svg) です。
 
 ### English
 
-Anthropic Claude Code was used for almost the entire development process, including requirements research, source code, build configuration, tests, and documentation. The author performed user testing in OBS Studio on Windows but did not perform a rigorous human review of the source code.
+Anthropic Claude Code was used for almost the entire development process, including requirements research, source code, build configuration, tests, and documentation. The author performed user testing in OBS Studio on Windows but did not perform a rigorous human review of the source code. The logo was chosen by the author from three SVG proposals created by Claude Code. The [SVG source](docs/images/logo.svg) is included in the repository.
 
 ## 更新情報
 
