@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <atomic>
 #include <string>
 
 namespace rts {
@@ -22,15 +23,21 @@ struct ResponseResult {
 	std::string transport_error;
 };
 
-// v1/responses へ同期で要求を送る。呼び出し元のスレッドで待つ
+// v1/responses へ同期で要求を送る。呼び出し元のスレッドで待つ。
+// cancel が真になると、libcurl の進捗のコールバックで転送を中断する
 class TextClient {
 public:
-	explicit TextClient(std::string api_key) : api_key_(std::move(api_key)) {}
+	TextClient(std::string api_key, const std::atomic<bool> *cancel = nullptr)
+		: api_key_(std::move(api_key)),
+		  cancel_(cancel)
+	{
+	}
 
 	ResponseResult create(const nlohmann::json &request) const;
 
 private:
 	std::string api_key_;
+	const std::atomic<bool> *cancel_;
 };
 
 } // namespace rts

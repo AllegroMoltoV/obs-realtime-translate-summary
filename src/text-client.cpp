@@ -16,6 +16,13 @@ size_t append_body(char *data, size_t size, size_t count, void *user)
 	return size * count;
 }
 
+// 0 以外を返すと libcurl が転送を中断する
+int check_cancel(void *user, curl_off_t, curl_off_t, curl_off_t, curl_off_t)
+{
+	const auto *cancel = static_cast<const std::atomic<bool> *>(user);
+	return cancel && cancel->load() ? 1 : 0;
+}
+
 long long token_count(const nlohmann::json &usage, const char *key, const char *detail_key = nullptr,
 		      const char *detail_field = nullptr)
 {
@@ -62,6 +69,11 @@ ResponseResult TextClient::create(const nlohmann::json &request) const
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+	if (cancel_) {
+		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+		curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &check_cancel);
+		curl_easy_setopt(curl, CURLOPT_XFERINFODATA, const_cast<std::atomic<bool> *>(cancel_));
+	}
 
 	const auto started = std::chrono::steady_clock::now();
 	const CURLcode rc = curl_easy_perform(curl);

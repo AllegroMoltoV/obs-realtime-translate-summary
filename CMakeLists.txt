@@ -22,6 +22,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# 字幕・英訳・概要の規則の中核。libobs と libcurl に依存させず、プラグインと単体テストの両方から使う
+file(
+  GLOB RTS_CORE_SOURCES
+  CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.h"
+)
+add_library(rts-core STATIC ${RTS_CORE_SOURCES})
+target_compile_features(rts-core PUBLIC cxx_std_17)
+target_include_directories(rts-core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rts-core PUBLIC nlohmann_json::nlohmann_json)
+# Linux で MODULE へ静的ライブラリをリンクするために必要。テンプレートの plugin-support と同じ扱い
+set_target_properties(rts-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
@@ -29,7 +43,7 @@ target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
 find_package(libobs REQUIRED)
 # Windows では obs-deps の import ライブラリにリンクし、実行時は OBS 同梱の libcurl.dll を使う
 find_package(CURL REQUIRED)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs CURL::libcurl nlohmann_json::nlohmann_json)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs CURL::libcurl rts-core)
 
 if(ENABLE_FRONTEND_API)
   find_package(obs-frontend-api REQUIRED)
@@ -65,6 +79,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${PLUGIN_SOURCES} ${PLUGIN_RESOURCE
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${PLUGIN_SOURCES} ${PLUGIN_RESOURCES})
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
+
+# 外部 API を使わない単体テスト。CI では実行せず、ローカルの ctest で動かす
+option(RTS_BUILD_TESTS "Build unit tests for the core rules" OFF)
+if(RTS_BUILD_TESTS)
+  enable_testing()
+  add_executable(rts-core-tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/core-tests.cpp")
+  target_link_libraries(rts-core-tests PRIVATE rts-core)
+  add_test(NAME rts-core-tests COMMAND rts-core-tests)
+endif()
 
 # Windows の開発時に、ビルドの直後に OBS のプラグインのフォルダーへ配置する
 option(ENABLE_POST_BUILD_INSTALL "Run cmake --install after build" ON)
