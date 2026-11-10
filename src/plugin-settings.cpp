@@ -69,6 +69,13 @@ void PluginSettings::load_global()
 	}
 	if (obs_data_has_user_value(data, "show_placeholders"))
 		loaded.show_placeholders = obs_data_get_bool(data, "show_placeholders");
+	if (obs_data_has_user_value(data, "auto_stop_enabled"))
+		loaded.auto_stop_enabled = obs_data_get_bool(data, "auto_stop_enabled");
+	if (obs_data_has_user_value(data, "auto_stop_minutes")) {
+		const int minutes = static_cast<int>(obs_data_get_int(data, "auto_stop_minutes"));
+		if (valid_auto_stop_minutes(minutes))
+			loaded.auto_stop_minutes = minutes;
+	}
 	obs_data_release(data);
 
 	std::lock_guard<std::mutex> lock(mutex_);
@@ -91,6 +98,8 @@ void PluginSettings::save_global_locked() const
 	obs_data_set_int(data, "summary_max_chars", global_.summary_max_chars);
 	obs_data_set_double(data, "summary_interval_seconds", global_.summary_interval_seconds);
 	obs_data_set_bool(data, "show_placeholders", global_.show_placeholders);
+	obs_data_set_bool(data, "auto_stop_enabled", global_.auto_stop_enabled);
+	obs_data_set_int(data, "auto_stop_minutes", global_.auto_stop_minutes);
 	if (!obs_data_save_json_safe(data, path, "tmp", "bak"))
 		obs_log(LOG_WARNING, "settings.json save failed");
 	obs_data_release(data);

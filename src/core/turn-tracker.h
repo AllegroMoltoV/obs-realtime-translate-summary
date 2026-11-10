@@ -24,7 +24,11 @@ enum class TurnError { None, UnknownPrevious, DuplicateSequence, UnknownItem };
 // 確定した発話を commit の順に放出する。元のツールの state.py の TurnTracker を移した
 class TurnTracker {
 public:
-	explicit TurnTracker(ClockFn clock = steady_clock_seconds());
+	// first_sequence は最初の発話に振る連番。再接続のあとも連番を前の続きから振るために使う
+	explicit TurnTracker(ClockFn clock = steady_clock_seconds(), int first_sequence = 0);
+
+	// これまでに振った最大の連番の次。まだ振っていなければ起点
+	int next_sequence() const;
 
 	// 同じ item_id の再 commit は既存の順番を返す
 	TurnError commit(const std::string &item_id, const std::optional<std::string> &previous_item_id,
@@ -42,6 +46,7 @@ private:
 	ClockFn clock_;
 	std::map<std::string, int> sequence_by_item_;
 	std::map<int, std::optional<CompletedTurn>> resolved_;
+	int first_sequence_ = 0;
 	int next_release_ = 0;
 };
 

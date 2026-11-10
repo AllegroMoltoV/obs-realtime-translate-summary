@@ -104,7 +104,8 @@ CaptionRouter::ResetCounts CaptionRouter::reset_session()
 	ResetCounts counts;
 	counts.pending_items = turns_.pending_count();
 	counts.partial_captions = static_cast<int>(partials_.size());
-	turns_ = TurnTracker(clock_);
+	// 連番は前のセッションの続きから振る。英訳は連番が直近より大きいものだけを表示するため、0 に戻すと英訳が出なくなる
+	turns_ = TurnTracker(clock_, turns_.next_sequence());
 	partials_.clear();
 	latest_displayed_sequence_ = -1;
 	return counts;

@@ -36,6 +36,8 @@ private:
 	QSpinBox *max_chars_spin_ = nullptr;
 	QDoubleSpinBox *interval_spin_ = nullptr;
 	QCheckBox *placeholders_check_ = nullptr;
+	QCheckBox *auto_stop_check_ = nullptr;
+	QSpinBox *auto_stop_spin_ = nullptr;
 };
 
 } // namespace rts

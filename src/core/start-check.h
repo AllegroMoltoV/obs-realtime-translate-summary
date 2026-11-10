@@ -42,4 +42,11 @@ constexpr int kMaxSummaryMaxChars = 200;
 bool valid_summary_max_chars(int value);
 bool valid_summary_interval(double seconds);
 
+constexpr int kMinAutoStopMinutes = 1;
+constexpr int kMaxAutoStopMinutes = 24 * 60;
+bool valid_auto_stop_minutes(int minutes);
+
+// 自動停止が有効で、経過時間が指定の分数に達したら true
+bool auto_stop_due(bool enabled, int minutes, double elapsed_seconds);
+
 } // namespace rts

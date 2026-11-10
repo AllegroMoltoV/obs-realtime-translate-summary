@@ -100,6 +100,21 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 	placeholders_check_ = new QCheckBox(text("Settings.Placeholders"), options_group);
 	placeholders_check_->setChecked(global.show_placeholders);
 	options_layout->addRow(QString(), placeholders_check_);
+
+	// 停止し忘れによる課金を防ぐための自動停止
+	auto_stop_check_ = new QCheckBox(text("Settings.AutoStop"), options_group);
+	auto_stop_check_->setChecked(global.auto_stop_enabled);
+	auto_stop_spin_ = new QSpinBox(options_group);
+	auto_stop_spin_->setRange(kMinAutoStopMinutes, kMaxAutoStopMinutes);
+	auto_stop_spin_->setSuffix(text("Settings.Minutes"));
+	auto_stop_spin_->setValue(global.auto_stop_minutes);
+	auto_stop_spin_->setEnabled(global.auto_stop_enabled);
+	connect(auto_stop_check_, &QCheckBox::toggled, auto_stop_spin_, &QSpinBox::setEnabled);
+	auto *auto_stop_row = new QHBoxLayout();
+	auto_stop_row->addWidget(auto_stop_check_);
+	auto_stop_row->addWidget(auto_stop_spin_);
+	auto_stop_row->addStretch(1);
+	options_layout->addRow(QString(), auto_stop_row);
 	options_layout->addRow(QString(), new QLabel(text("Settings.AppliesNext"), options_group));
 
 	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -184,6 +199,8 @@ void SettingsDialog::on_accept()
 	settings.summary_max_chars = max_chars_spin_->value();
 	settings.summary_interval_seconds = interval_spin_->value();
 	settings.show_placeholders = placeholders_check_->isChecked();
+	settings.auto_stop_enabled = auto_stop_check_->isChecked();
+	settings.auto_stop_minutes = auto_stop_spin_->value();
 	PluginSettings::instance().set_global(settings);
 	// 仮の文字列の表示の切り替えを、停止中ならすぐ表示先に反映する
 	Controller::instance().show_idle_on_selected_targets();

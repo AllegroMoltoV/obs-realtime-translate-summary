@@ -110,8 +110,19 @@ void Controller::stop()
 
 void Controller::poll()
 {
-	if (active_ && session_.state() == SessionState::Error)
+	if (!active_)
+		return;
+	if (session_.state() == SessionState::Error) {
 		stop();
+		return;
+	}
+	const GlobalSettings global = PluginSettings::instance().global();
+	if (auto_stop_due(global.auto_stop_enabled, global.auto_stop_minutes, session_.elapsed_seconds())) {
+		obs_log(LOG_INFO, "controller auto stop minutes=%d", global.auto_stop_minutes);
+		stop();
+		last_status_.auto_stopped = true;
+		last_status_.auto_stop_minutes = global.auto_stop_minutes;
+	}
 }
 
 void Controller::on_source_removed(const std::string &name)
@@ -174,6 +185,8 @@ Controller::Status Controller::status() const
 	s.output_tokens = session_.output_tokens();
 	s.muted = session_.muted();
 	s.text_failures = session_.text_failures();
+	s.retry_attempt = session_.retry_attempt();
+	s.max_retries = session_.max_retries();
 	return s;
 }
 

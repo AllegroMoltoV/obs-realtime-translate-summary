@@ -44,6 +44,10 @@ public:
 		long long output_tokens = 0;
 		bool muted = false;
 		int text_failures = 0;
+		int retry_attempt = 0;
+		int max_retries = 0;
+		bool auto_stopped = false;
+		int auto_stop_minutes = 0;
 	};
 	Status status() const;
 

@@ -1,5 +1,6 @@
 #include "turn-tracker.h"
 
+#include <algorithm>
 #include <chrono>
 
 namespace rts {
@@ -11,7 +12,20 @@ ClockFn steady_clock_seconds()
 	};
 }
 
-TurnTracker::TurnTracker(ClockFn clock) : clock_(std::move(clock)) {}
+TurnTracker::TurnTracker(ClockFn clock, int first_sequence)
+	: clock_(std::move(clock)),
+	  first_sequence_(first_sequence),
+	  next_release_(first_sequence)
+{
+}
+
+int TurnTracker::next_sequence() const
+{
+	int next = first_sequence_;
+	for (const auto &entry : sequence_by_item_)
+		next = (std::max)(next, entry.second + 1);
+	return next;
+}
 
 TurnError TurnTracker::commit(const std::string &item_id, const std::optional<std::string> &previous_item_id,
 			      int *sequence_out)
@@ -23,7 +37,7 @@ TurnError TurnTracker::commit(const std::string &item_id, const std::optional<st
 		return TurnError::None;
 	}
 
-	int sequence = 0;
+	int sequence = first_sequence_;
 	if (previous_item_id) {
 		const auto previous = sequence_by_item_.find(*previous_item_id);
 		if (previous == sequence_by_item_.end())

@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #include <exception>
+#include <random>
 
 using json = nlohmann::json;
 
@@ -22,6 +23,11 @@ namespace {
 
 constexpr const char *kRealtimeUrl = "wss://api.openai.com/v1/realtime?intent=transcription";
 constexpr size_t kChunkSamples = PcmConverter::kOutputRate / 10; // 100 ms
+// 元のツールの websockets の ping_interval と ping_timeout と同じ値
+constexpr auto kPingInterval = std::chrono::seconds(20);
+constexpr auto kPingTimeout = std::chrono::seconds(20);
+// error イベントのあとこの時間内に閉じた接続は、サーバー側の終了とみなして再接続する
+constexpr auto kErrorCloseWindow = std::chrono::seconds(5);
 
 const char *turn_error_name(TurnError error)
 {
@@ -51,6 +57,11 @@ std::string join_lines(const DisplayLines &lines)
 	return text;
 }
 
+double seconds_since(std::chrono::steady_clock::time_point since)
+{
+	return std::chrono::duration<double>(std::chrono::steady_clock::now() - since).count();
+}
+
 } // namespace
 
 RealtimeSession::RealtimeSession() = default;
@@ -71,9 +82,10 @@ bool RealtimeSession::start(const SessionConfig &config, OutputFn on_output)
 	sent_chunks_ = 0;
 	input_tokens_ = 0;
 	output_tokens_ = 0;
+	retry_attempt_ = 0;
 	produced_samples_ = caption_updates_ = completed_turns_ = router_errors_ = 0;
-	network_alive_ = false;
-	session_updated_ = false;
+	first_ping_logged_ = first_pong_logged_ = false;
+	last_metrics_ = Clock::now();
 	error_ = SessionError::None;
 	started_ns_ = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count();
 
@@ -156,6 +168,27 @@ void RealtimeSession::fail(SessionError error)
 	running_ = false;
 }
 
+size_t RealtimeSession::drain_audio()
+{
+	size_t frames = 0;
+	MonoFrame frame;
+	while (capture_.pop(frame))
+		frames += frame.frames;
+	return frames;
+}
+
+bool RealtimeSession::wait_before_retry(int attempt, const RetryPolicy &policy, double jitter)
+{
+	const double delay = policy.delay_seconds(attempt, jitter);
+	obs_log(LOG_INFO, "session reconnect scheduled attempt=%d/%d delay_s=%.2f", attempt, policy.max_retries, delay);
+	const auto until =
+		Clock::now() + std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(delay));
+	// 停止の要求をすぐ受け付けるよう、短い間隔で確かめながら待つ
+	while (running_.load() && Clock::now() < until)
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	return running_.load();
+}
+
 void RealtimeSession::network_loop()
 {
 	// 例外がスレッドの外へ出ると std::terminate で OBS ごと落ちるため、ここで捕捉する
@@ -168,95 +201,179 @@ void RealtimeSession::network_loop()
 			return;
 		}
 
-		RealtimeClient client;
-		std::string error;
-		if (!client.connect(kRealtimeUrl, config_.api_key, error)) {
-			obs_log(LOG_ERROR, "session realtime connect failed %s", error.c_str());
-			const long status = client.last_http_status();
-			fail(status == 401 || status == 403 ? SessionError::AuthFailed : SessionError::ConnectFailed);
-			return;
-		}
-		if (!client.send_text(session_update(config_.keywords).dump(), error)) {
-			obs_log(LOG_ERROR, "session session.update send failed %s", error.c_str());
-			fail(SessionError::ConnectFailed);
-			return;
-		}
-		network_alive_ = true;
-
-		if (!capture_.attach(config_.audio_source)) {
-			obs_log(LOG_ERROR, "session audio source not found or has no audio");
-			client.close();
-			fail(SessionError::AudioSourceMissing);
-			return;
-		}
-
-		state_ = SessionState::Running;
-		last_metrics_ = Clock::now();
-		obs_log(LOG_INFO, "session started input_rate=%u keywords=%zu", input_rate, config_.keywords.size());
-
+		RetryCounter counter;
+		std::mt19937 rng(std::random_device{}());
+		std::uniform_real_distribution<double> jitter(0.0, 1.0);
+		bool attached = false;
 		std::vector<int16_t> pcm;
-		MonoFrame frame;
+
 		while (running_.load()) {
-			bool worked = false;
+			RealtimeClient client;
+			std::string error;
+			const bool connected = client.connect(kRealtimeUrl, config_.api_key, error, &running_);
+			if (!running_.load())
+				break;
 
-			while (capture_.pop(frame)) {
-				worked = true;
-				const size_t before = pcm.size();
-				converter.convert(frame.samples, frame.frames, pcm);
-				produced_samples_ += pcm.size() - before;
-			}
-
-			while (pcm.size() >= kChunkSamples) {
-				if (network_alive_) {
-					const std::string audio =
-						base64_encode(reinterpret_cast<const uint8_t *>(pcm.data()),
-							      kChunkSamples * sizeof(int16_t));
-					const json append = {{"type", "input_audio_buffer.append"}, {"audio", audio}};
-					if (client.send_text(append.dump(), error)) {
-						++sent_chunks_;
-					} else {
-						obs_log(LOG_ERROR, "session audio send failed %s", error.c_str());
-						network_alive_ = false;
-					}
-				}
-				pcm.erase(pcm.begin(), pcm.begin() + kChunkSamples);
-			}
-
-			while (network_alive_) {
-				std::string message;
-				const auto result = client.receive(message, error);
-				if (result == RealtimeClient::RecvResult::Nothing)
+			ConnectionEnd end = ConnectionEnd::Lost;
+			double connected_seconds = 0.0;
+			if (!connected) {
+				const long status = client.last_http_status();
+				obs_log(LOG_ERROR, "session realtime connect failed %s", error.c_str());
+				if (status == 401 || status == 403) {
+					fail(SessionError::AuthFailed);
 					break;
-				worked = true;
-				if (result == RealtimeClient::RecvResult::Message) {
-					handle_message(message);
-					continue;
 				}
-				obs_log(LOG_ERROR, "session realtime %s close_code=%d elapsed_s=%.1f detail=%s",
-					result == RealtimeClient::RecvResult::Closed ? "closed" : "error",
-					client.close_code(), elapsed_seconds(), error.c_str());
-				network_alive_ = false;
+			} else if (!client.send_text(session_update(config_.keywords).dump(), error)) {
+				obs_log(LOG_ERROR, "session session.update send failed %s", error.c_str());
+			} else {
+				if (!attached) {
+					if (!capture_.attach(config_.audio_source)) {
+						obs_log(LOG_ERROR, "session audio source not found or has no audio");
+						client.close();
+						fail(SessionError::AudioSourceMissing);
+						break;
+					}
+					attached = true;
+				}
+				// 待機と接続の間にたまった音声は古いため、接続に成功した直後に捨てる
+				const size_t discarded = drain_audio();
+				pcm.clear();
+				if (discarded > 0)
+					obs_log(LOG_INFO, "session discarded stale audio frames=%zu", discarded);
+
+				state_ = SessionState::Running;
+				retry_attempt_ = 0;
+				obs_log(LOG_INFO, "session connected input_rate=%u keywords=%zu retries=%d", input_rate,
+					config_.keywords.size(), counter.retries());
+				const auto connected_at = Clock::now();
+				end = run_connection(client, converter, pcm);
+				connected_seconds = seconds_since(connected_at);
+				obs_log(LOG_INFO, "session connection ended reason=%s connected_s=%.1f pongs=%llu",
+					end == ConnectionEnd::Stopped ? "stopped"
+					: end == ConnectionEnd::Fatal ? "fatal"
+								      : "lost",
+					connected_seconds, client.pongs_received());
 			}
+			client.close();
+			if (end != ConnectionEnd::Lost || !running_.load())
+				break;
 
-			// 再接続は段階 5 で足す。それまでは切断を停止の原因として返す
-			if (!network_alive_ && running_.load() && error_.load() == SessionError::None)
+			// 前の接続の未完了の発話と認識途中の字幕は捨てる。英訳と概要の処理中のものは続ける
+			const auto reset = router_->reset_session();
+			obs_log(LOG_INFO, "session reset pending_items=%d partial_captions=%d", reset.pending_items,
+				reset.partial_captions);
+
+			if (!counter.on_disconnect(connected_seconds)) {
+				obs_log(LOG_ERROR, "session reconnect exhausted retries=%d", counter.retries());
 				fail(SessionError::ConnectionLost);
-
-			if (Clock::now() - last_metrics_ >= std::chrono::seconds(60))
-				log_metrics();
-
-			if (!worked)
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				break;
+			}
+			retry_attempt_ = counter.retries();
+			state_ = SessionState::Reconnecting;
+			if (!wait_before_retry(counter.retries(), counter.policy(), jitter(rng)))
+				break;
 		}
 
-		capture_.detach();
+		if (attached)
+			capture_.detach();
 		log_metrics();
-		client.close();
 	} catch (...) {
 		capture_.detach();
 		obs_log(LOG_ERROR, "session network thread exception");
 		fail(SessionError::Internal);
 	}
+}
+
+RealtimeSession::ConnectionEnd RealtimeSession::run_connection(RealtimeClient &client, PcmConverter &converter,
+							       std::vector<int16_t> &pcm)
+{
+	session_updated_ = false;
+	error_event_pending_ = false;
+	auto last_ping = Clock::now();
+	bool ping_outstanding = false;
+	std::string error;
+	MonoFrame frame;
+
+	while (running_.load()) {
+		bool worked = false;
+
+		while (capture_.pop(frame)) {
+			worked = true;
+			const size_t before = pcm.size();
+			converter.convert(frame.samples, frame.frames, pcm);
+			produced_samples_ += pcm.size() - before;
+		}
+
+		while (pcm.size() >= kChunkSamples) {
+			const std::string audio = base64_encode(reinterpret_cast<const uint8_t *>(pcm.data()),
+								kChunkSamples * sizeof(int16_t));
+			const json append = {{"type", "input_audio_buffer.append"}, {"audio", audio}};
+			if (!client.send_text(append.dump(), error)) {
+				obs_log(LOG_ERROR, "session audio send failed %s", error.c_str());
+				return ConnectionEnd::Lost;
+			}
+			++sent_chunks_;
+			pcm.erase(pcm.begin(), pcm.begin() + kChunkSamples);
+		}
+
+		for (;;) {
+			std::string message;
+			const auto result = client.receive(message, error);
+			if (result == RealtimeClient::RecvResult::Nothing)
+				break;
+			worked = true;
+			if (result == RealtimeClient::RecvResult::Message) {
+				handle_message(message);
+				if (!running_.load())
+					return ConnectionEnd::Fatal;
+				continue;
+			}
+			obs_log(LOG_ERROR, "session realtime %s close_code=%d detail=%s after_error=%d",
+				result == RealtimeClient::RecvResult::Closed ? "closed" : "error", client.close_code(),
+				error.c_str(), error_event_pending_ ? 1 : 0);
+			return ConnectionEnd::Lost;
+		}
+
+		// error イベントのあと閉じられないまま期限を過ぎたら、元のツールと同じく再試行せず停止する
+		if (error_event_pending_ && Clock::now() - error_event_at_ > kErrorCloseWindow) {
+			obs_log(LOG_ERROR, "session stopping after api error without close");
+			fail(SessionError::ApiError);
+			return ConnectionEnd::Fatal;
+		}
+
+		// ping の応答の途絶で切断を検知する。PONG を一度も受け取っていない接続では、
+		// libcurl やサーバーが PONG を返さない場合の誤検知を避けるため判定しない
+		const auto now = Clock::now();
+		if (ping_outstanding && client.pongs_received() > 0 && client.last_pong() < last_ping &&
+		    now - last_ping > kPingTimeout) {
+			obs_log(LOG_ERROR, "session ping timeout");
+			return ConnectionEnd::Lost;
+		}
+		if (now - last_ping >= kPingInterval) {
+			const unsigned long long pongs_before = client.pongs_received();
+			if (!client.send_ping(error)) {
+				obs_log(LOG_ERROR, "session ping send failed %s", error.c_str());
+				return ConnectionEnd::Lost;
+			}
+			if (pongs_before == 0 && !first_ping_logged_) {
+				obs_log(LOG_INFO, "session first ping sent");
+				first_ping_logged_ = true;
+			}
+			last_ping = now;
+			ping_outstanding = true;
+		}
+		if (client.pongs_received() == 1 && !first_pong_logged_) {
+			obs_log(LOG_INFO, "session first pong received");
+			first_pong_logged_ = true;
+		}
+
+		if (Clock::now() - last_metrics_ >= std::chrono::seconds(60))
+			log_metrics();
+
+		if (!worked)
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
+	return ConnectionEnd::Stopped;
 }
 
 void RealtimeSession::handle_message(const std::string &message)
@@ -274,11 +391,16 @@ void RealtimeSession::handle_message(const std::string &message)
 			obs_log(LOG_ERROR, "session event error error_type=%s error_code=%s error_param=%s",
 				event->error_type.c_str(), event->error_code.c_str(), event->error_param.c_str());
 			// OpenAI は無効なキーでもハンドシェイクを HTTP 101 で通し、この error を送ってから閉じる
-			if (event->error_code == "invalid_api_key")
+			if (event->error_code == "invalid_api_key") {
 				fail(SessionError::AuthFailed);
-			// session.updated より前のほかの error は設定が受け付けられなかったことを示し、続けても字幕が出ないため止める
-			else if (!session_updated_)
+			} else if (!session_updated_) {
+				// session.updated より前のほかの error は設定が受け付けられなかったことを示し、再接続しても同じになる
 				fail(SessionError::SessionRejected);
+			} else {
+				// セッションの時間の上限などで閉じられる前触れの可能性があるため、閉じられるかを少し待ってから判断する
+				error_event_pending_ = true;
+				error_event_at_ = Clock::now();
+			}
 		}
 		return;
 	}

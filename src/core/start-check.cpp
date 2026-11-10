@@ -60,4 +60,14 @@ bool valid_summary_interval(double seconds)
 	return std::isfinite(seconds) && seconds > 0.0;
 }
 
+bool valid_auto_stop_minutes(int minutes)
+{
+	return minutes >= kMinAutoStopMinutes && minutes <= kMaxAutoStopMinutes;
+}
+
+bool auto_stop_due(bool enabled, int minutes, double elapsed_seconds)
+{
+	return enabled && valid_auto_stop_minutes(minutes) && elapsed_seconds >= minutes * 60.0;
+}
+
 } // namespace rts

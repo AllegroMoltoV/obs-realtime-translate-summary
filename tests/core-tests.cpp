@@ -3,6 +3,7 @@
 #include "core/caption-router.h"
 #include "core/keywords.h"
 #include "core/prompts.h"
+#include "core/retry-policy.h"
 #include "core/start-check.h"
 #include "core/summary-parser.h"
 #include "core/summary-state.h"
@@ -409,6 +410,51 @@ void test_stop_cancels_inflight_translation()
 	CHECK(true);
 }
 
+// ---- retry-policy ----
+
+void test_retry_policy()
+{
+	RetryPolicy policy;
+	CHECK(policy.delay_seconds(1, 1.0) == 1.0);
+	CHECK(policy.delay_seconds(1, 0.0) == 0.5);
+	CHECK(policy.delay_seconds(3, 1.0) == 4.0);
+	CHECK(policy.delay_seconds(5, 1.0) == 16.0);
+	CHECK(policy.delay_seconds(9, 1.0) == 16.0); // 上限で頭打ち
+
+	RetryCounter counter;
+	for (int i = 1; i <= 5; ++i) {
+		CHECK(counter.on_disconnect(0.0));
+		CHECK(counter.retries() == i);
+	}
+	CHECK(!counter.on_disconnect(10.0)); // 短い接続のあとでは回数を戻さず、上限で止まる
+	CHECK(counter.on_disconnect(60.0));  // 60 秒以上続いた接続のあとでは 0 に戻してから数える
+	CHECK(counter.retries() == 1);
+}
+
+// 再接続で router をリセットしても、英訳が古い連番として捨てられない
+void test_sequences_continue_after_reset()
+{
+	std::vector<int> sequences;
+	CaptionRouter router([](const std::string &) {},
+			     [&](const CompletedTurn &t) { sequences.push_back(t.sequence); });
+	using T = TranscriptionEvent::Type;
+	router.handle(make_event(T::Committed, "a"));
+	router.handle(make_event(T::Committed, "b", std::string("a")));
+	router.handle(make_event(T::Completed, "a", std::nullopt, "一"));
+	router.handle(make_event(T::Completed, "b", std::nullopt, "二"));
+	router.reset_session();
+	router.handle(make_event(T::Committed, "x"));
+	router.handle(make_event(T::Completed, "x", std::nullopt, "三"));
+	CHECK(sequences == std::vector<int>({0, 1, 2}));
+
+	// 未完了のまま捨てた発話があっても、次のセッションの連番はそれより大きい
+	router.handle(make_event(T::Committed, "y", std::string("x")));
+	router.reset_session();
+	router.handle(make_event(T::Committed, "z"));
+	router.handle(make_event(T::Completed, "z", std::nullopt, "四"));
+	CHECK(!sequences.empty() && sequences.back() == 4);
+}
+
 // ---- start-check ----
 
 bool has_problem(const std::vector<StartProblem> &problems, StartProblem p)
@@ -453,6 +499,11 @@ void test_start_check()
 	CHECK(valid_summary_max_chars(30));
 	CHECK(!valid_summary_interval(0.0));
 	CHECK(valid_summary_interval(0.5));
+
+	CHECK(!auto_stop_due(false, 70, 99999.0)); // 無効なら止めない
+	CHECK(!auto_stop_due(true, 70, 70 * 60.0 - 1.0));
+	CHECK(auto_stop_due(true, 70, 70 * 60.0));
+	CHECK(!auto_stop_due(true, 0, 99999.0)); // 範囲外の分数では止めない
 }
 
 } // namespace
@@ -475,6 +526,8 @@ int main()
 		{"invalid_summary_keeps_last_and_allows_retry", test_invalid_summary_keeps_last_and_allows_retry},
 		{"stop_cancels_inflight_translation", test_stop_cancels_inflight_translation},
 		{"start_check", test_start_check},
+		{"retry_policy", test_retry_policy},
+		{"sequences_continue_after_reset", test_sequences_continue_after_reset},
 	};
 	for (const auto &test : tests) {
 		const int before = g_failures;

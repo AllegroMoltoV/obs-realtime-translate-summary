@@ -108,6 +108,8 @@ const char *session_error_key(SessionError error)
 		return "Error.AuthFailed";
 	case SessionError::SessionRejected:
 		return "Error.SessionRejected";
+	case SessionError::ApiError:
+		return "Error.ApiError";
 	case SessionError::AudioSourceMissing:
 		return "Error.AudioSourceMissing";
 	case SessionError::ConnectionLost:
@@ -257,6 +259,9 @@ void Dock::update_status()
 	case SessionState::Running:
 		state = text("Dock.State.Running") + "  " + format_duration(status.elapsed_seconds);
 		break;
+	case SessionState::Reconnecting:
+		state = text("Dock.State.Reconnecting").arg(status.retry_attempt).arg(status.max_retries);
+		break;
 	case SessionState::Error:
 		state = text("Dock.State.Error");
 		details << text(session_error_key(status.error));
@@ -264,6 +269,8 @@ void Dock::update_status()
 	}
 	if (status.source_removed)
 		details << text("Error.SourceRemoved");
+	if (status.auto_stopped)
+		details << text("Dock.AutoStopped").arg(status.auto_stop_minutes);
 	for (const auto problem : status.problems)
 		details << text(problem_key(problem));
 	if (active && status.muted)
