@@ -3,9 +3,11 @@
 
 # Except for default project files
 !/.github
+!/.soko-kun
 !/build-aux
 !/cmake
 !/data
+!/docs
 !/src
 !.clang-format
 !.gersemirc

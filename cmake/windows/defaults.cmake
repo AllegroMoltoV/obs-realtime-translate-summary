@@ -8,9 +8,11 @@ set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)
 include(buildspec)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  # ALLUSERSPROFILE は C:\ProgramData の形で、そのままでは cmake_install.cmake の文字列で \P が不正なエスケープになる
+  file(TO_CMAKE_PATH "$ENV{ALLUSERSPROFILE}" _all_users_profile)
   set(
     CMAKE_INSTALL_PREFIX
-    "$ENV{ALLUSERSPROFILE}/obs-studio/plugins"
+    "${_all_users_profile}/obs-studio/plugins"
     CACHE STRING
     "Default plugin installation directory"
     FORCE
