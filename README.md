@@ -8,6 +8,8 @@ OBS Studio で、日本語の配信の音声からリアルタイムに 3 つの
 
 音声の認識、英訳、概要の作成には OpenAI の API を使います。
 
+[配信プラグイン倉庫くん](https://soko-kun.allegromoltov.jp/plugins/allegromoltov/obs-realtime-translate-summary) にも掲載しています。 / Also listed on [Plugin Soko-kun](https://soko-kun.allegromoltov.jp/plugins/allegromoltov/obs-realtime-translate-summary?lang=en).
+
 > このプラグインは無料です。ただし、OpenAI API の利用料金は、利用者ご自身の OpenAI アカウントに別途請求されます。利用には、ご自身で発行した OpenAI の API キーが必要です。料金の目安は「[費用](#費用)」を参照してください。
 
 ## 背景
