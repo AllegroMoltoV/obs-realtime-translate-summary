@@ -8,6 +8,8 @@ context compaction で文脈が失われた場合は、この索引から必要�
 | 要件と初回セットアップの指示 | `.prompts/INIT.md` |
 | 利用者が触れる部分の仕様 (ドック、設定画面、ホットキー、エラーの表示) | `docs/design/user-interface.md` |
 | 調査レポート | `docs/reports/` |
+| 段階 5 の障害時の挙動と長時間の利用の確認 (再接続、60 分の上限、自動停止) | `docs/reports/2026-11-10-stage5-reconnect.md` |
+| 段階 5 の確認の OBS のログの抜粋 (本文なし) | `docs/logs/2026-11-10-stage5-reconnect-obs-log-excerpt.txt` |
 | 段階 4 の依頼者の確認とインストールの体験の結果、所見への対応 | `docs/reports/2026-11-10-stage4-user-review.md` |
 | 英訳と概要のモデルの比較 (gpt-6-luna、gpt-5.6-luna、gpt-5.4-nano) | `docs/reports/2026-11-10-model-comparison.md` |
 | モデルの比較の生成した全文と集計 (入力は架空の発話) | `docs/logs/2026-11-10-model-eval/` |
