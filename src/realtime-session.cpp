@@ -273,8 +273,11 @@ void RealtimeSession::handle_message(const std::string &message)
 		if (event->type_name == "error") {
 			obs_log(LOG_ERROR, "session event error error_type=%s error_code=%s error_param=%s",
 				event->error_type.c_str(), event->error_code.c_str(), event->error_param.c_str());
-			// session.updated より前の error は設定が受け付けられなかったことを示し、続けても字幕が出ないため止める
-			if (!session_updated_)
+			// OpenAI は無効なキーでもハンドシェイクを HTTP 101 で通し、この error を送ってから閉じる
+			if (event->error_code == "invalid_api_key")
+				fail(SessionError::AuthFailed);
+			// session.updated より前のほかの error は設定が受け付けられなかったことを示し、続けても字幕が出ないため止める
+			else if (!session_updated_)
 				fail(SessionError::SessionRejected);
 		}
 		return;

@@ -91,6 +91,9 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 	interval_spin_->setValue(global.summary_interval_seconds);
 	auto *options_layout = new QFormLayout(options_group);
 	options_layout->addRow(text("Settings.Keywords"), keywords_edit_);
+	auto *keywords_help = new QLabel(text("Settings.Keywords.Help"), options_group);
+	keywords_help->setWordWrap(true);
+	options_layout->addRow(QString(), keywords_help);
 	options_layout->addRow(QString(), keywords_message_label_);
 	options_layout->addRow(text("Settings.MaxChars"), max_chars_spin_);
 	options_layout->addRow(text("Settings.Interval"), interval_spin_);

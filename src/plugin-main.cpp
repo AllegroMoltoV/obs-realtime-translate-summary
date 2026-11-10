@@ -44,6 +44,7 @@ constexpr const char *kDockId = "realtime-translate-summary-dock";
 QPointer<rts::Dock> g_dock;
 obs_hotkey_id g_hotkey_start = OBS_INVALID_HOTKEY_ID;
 obs_hotkey_id g_hotkey_stop = OBS_INVALID_HOTKEY_ID;
+obs_hotkey_id g_hotkey_toggle = OBS_INVALID_HOTKEY_ID;
 bool g_refresh_pending = false;
 
 // メインウィンドウの close の要求を、OBS の closeEvent より先に受け取る。
@@ -135,16 +136,22 @@ void on_source_renamed(void *, calldata_t *data)
 	request_dock_refresh();
 }
 
+enum class HotkeyAction { Start, Stop, Toggle };
+
+HotkeyAction g_hotkey_actions[] = {HotkeyAction::Start, HotkeyAction::Stop, HotkeyAction::Toggle};
+
+// ホットキーのスレッドから呼ばれるため、操作はメインスレッドへ移す
 void on_hotkey(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
 	if (!pressed)
 		return;
-	const bool start = data != nullptr;
-	rts::run_on_main_thread([start] {
-		if (start)
-			rts::Controller::instance().start();
+	const HotkeyAction action = *static_cast<HotkeyAction *>(data);
+	rts::run_on_main_thread([action] {
+		auto &controller = rts::Controller::instance();
+		if (action == HotkeyAction::Start || (action == HotkeyAction::Toggle && !controller.active()))
+			controller.start();
 		else
-			rts::Controller::instance().stop();
+			controller.stop();
 	});
 }
 
@@ -171,6 +178,7 @@ void on_save(obs_data_t *save_data, bool saving, void *)
 		obs_data_t *obj = obs_data_get_obj(save_data, rts::PluginSettings::kSaveKey);
 		save_hotkey(obj, "hotkey_start", g_hotkey_start);
 		save_hotkey(obj, "hotkey_stop", g_hotkey_stop);
+		save_hotkey(obj, "hotkey_toggle", g_hotkey_toggle);
 		obs_data_release(obj);
 		return;
 	}
@@ -181,6 +189,7 @@ void on_save(obs_data_t *save_data, bool saving, void *)
 		obj = obs_data_create();
 	load_hotkey(obj, "hotkey_start", g_hotkey_start);
 	load_hotkey(obj, "hotkey_stop", g_hotkey_stop);
+	load_hotkey(obj, "hotkey_toggle", g_hotkey_toggle);
 	obs_data_release(obj);
 	// 異常終了で残った本文を消す
 	rts::Controller::instance().show_idle_on_selected_targets();
@@ -241,12 +250,13 @@ bool obs_module_load(void)
 	log_curl_runtime();
 	rts::PluginSettings::instance().load_global();
 
-	// data が非 null なら開始、null なら停止のホットキー
-	static int start_marker = 0;
+	// 同じキーを開始と停止の両方に割り当てると両方が動くため、1 つのキーで切り替えるホットキーも用意する
+	g_hotkey_toggle = obs_hotkey_register_frontend(
+		"realtime_translate_summary.toggle", obs_module_text("Hotkey.Toggle"), on_hotkey, &g_hotkey_actions[2]);
 	g_hotkey_start = obs_hotkey_register_frontend("realtime_translate_summary.start",
-						      obs_module_text("Hotkey.Start"), on_hotkey, &start_marker);
+						      obs_module_text("Hotkey.Start"), on_hotkey, &g_hotkey_actions[0]);
 	g_hotkey_stop = obs_hotkey_register_frontend("realtime_translate_summary.stop", obs_module_text("Hotkey.Stop"),
-						     on_hotkey, nullptr);
+						     on_hotkey, &g_hotkey_actions[1]);
 
 	signal_handler_t *handler = obs_get_signal_handler();
 	signal_handler_connect(handler, "source_create", on_source_created, nullptr);
@@ -272,6 +282,7 @@ void obs_module_unload(void)
 
 	obs_hotkey_unregister(g_hotkey_start);
 	obs_hotkey_unregister(g_hotkey_stop);
+	obs_hotkey_unregister(g_hotkey_toggle);
 
 	rts::Controller::instance().stop();
 	// ドックは OBS が破棄する
