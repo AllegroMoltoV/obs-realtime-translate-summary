@@ -3,12 +3,14 @@
 #include "core/caption-router.h"
 #include "core/keywords.h"
 #include "core/prompts.h"
+#include "core/start-check.h"
 #include "core/summary-parser.h"
 #include "core/summary-state.h"
 #include "core/text-pipeline.h"
 #include "core/text-util.h"
 #include "core/turn-tracker.h"
 
+#include <algorithm>
 #include <condition_variable>
 #include <cstdio>
 #include <functional>
@@ -407,6 +409,52 @@ void test_stop_cancels_inflight_translation()
 	CHECK(true);
 }
 
+// ---- start-check ----
+
+bool has_problem(const std::vector<StartProblem> &problems, StartProblem p)
+{
+	return std::find(problems.begin(), problems.end(), p) != problems.end();
+}
+
+void test_start_check()
+{
+	StartInputs ok;
+	ok.api_key_saved = true;
+	ok.audio_source = "mic";
+	ok.audio_source_exists = true;
+	ok.targets[0] = {"ja", true, true};
+	CHECK(check_start(ok).empty());
+
+	StartInputs none;
+	const auto p1 = check_start(none);
+	CHECK(has_problem(p1, StartProblem::ApiKeyMissing));
+	CHECK(has_problem(p1, StartProblem::AudioSourceNotSelected));
+	CHECK(has_problem(p1, StartProblem::NoTargetSelected));
+
+	StartInputs bad = ok;
+	bad.audio_source_exists = false;
+	bad.targets[1] = {"ja", true, true};   // 重複
+	bad.targets[2] = {"img", true, false}; // テキストソースでない
+	const auto p2 = check_start(bad);
+	CHECK(has_problem(p2, StartProblem::AudioSourceMissing));
+	CHECK(has_problem(p2, StartProblem::DuplicateTarget));
+	CHECK(has_problem(p2, StartProblem::TargetNotText));
+	CHECK(!has_problem(p2, StartProblem::NoTargetSelected));
+
+	StartInputs gone = ok;
+	gone.targets[0].exists = false;
+	CHECK(has_problem(check_start(gone), StartProblem::TargetMissing));
+
+	CHECK(is_supported_text_source_id("text_gdiplus"));
+	CHECK(is_supported_text_source_id("text_ft2_source"));
+	CHECK(!is_supported_text_source_id("text_gdiplus_v3"));
+	CHECK(!valid_summary_max_chars(3));
+	CHECK(valid_summary_max_chars(4));
+	CHECK(valid_summary_max_chars(30));
+	CHECK(!valid_summary_interval(0.0));
+	CHECK(valid_summary_interval(0.5));
+}
+
 } // namespace
 
 int main()
@@ -426,6 +474,7 @@ int main()
 		{"summary_respects_minimum_interval", test_summary_respects_minimum_interval},
 		{"invalid_summary_keeps_last_and_allows_retry", test_invalid_summary_keeps_last_and_allows_retry},
 		{"stop_cancels_inflight_translation", test_stop_cancels_inflight_translation},
+		{"start_check", test_start_check},
 	};
 	for (const auto &test : tests) {
 		const int before = g_failures;

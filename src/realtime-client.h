@@ -28,12 +28,15 @@ public:
 	RecvResult receive(std::string &message, std::string &error);
 
 	int close_code() const { return close_code_; }
+	// 直近の接続のハンドシェイクの HTTP の応答コード。認証の失敗の判定に使う
+	long last_http_status() const { return last_http_status_; }
 
 private:
 	CURL *curl_ = nullptr;
 	curl_slist *headers_ = nullptr;
 	std::string partial_;
 	int close_code_ = 0;
+	long last_http_status_ = 0;
 };
 
 } // namespace rts

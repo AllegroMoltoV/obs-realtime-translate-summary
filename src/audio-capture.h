@@ -37,6 +37,8 @@ public:
 
 	uint64_t dropped_frames() const { return dropped_.load(std::memory_order_relaxed); }
 	uint64_t muted_callbacks() const { return muted_.load(std::memory_order_relaxed); }
+	// 直近のコールバックがミュート中だったか
+	bool muted_now() const { return muted_now_.load(std::memory_order_relaxed); }
 	size_t queued() const { return queue_->size_approx(); }
 
 private:
@@ -48,6 +50,7 @@ private:
 	std::unique_ptr<SPSCQueue<MonoFrame, kQueueCapacity>> queue_;
 	std::atomic<uint64_t> dropped_{0};
 	std::atomic<uint64_t> muted_{0};
+	std::atomic<bool> muted_now_{false};
 };
 
 } // namespace rts

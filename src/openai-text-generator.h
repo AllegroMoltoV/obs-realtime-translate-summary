@@ -4,6 +4,7 @@
 #include "core/text-pipeline.h"
 
 #include <atomic>
+#include <functional>
 #include <string>
 
 namespace rts {
@@ -17,6 +18,11 @@ public:
 	GenerationResult translate(const std::string &transcript) override;
 	GenerationResult summarize(const std::vector<std::string> &transcripts) override;
 	void cancel() override { cancel_.store(true); }
+
+	// 入力と出力のトークン数を受け取る。作業のスレッドから呼ばれる
+	std::function<void(long long input_tokens, long long output_tokens)> on_usage;
+	// 停止による中断を除く失敗で呼ばれる。作業のスレッドから呼ばれる
+	std::function<void()> on_failure;
 
 private:
 	GenerationResult send(const char *kind, nlohmann::json request);

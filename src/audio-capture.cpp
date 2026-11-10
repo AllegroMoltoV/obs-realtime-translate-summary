@@ -30,6 +30,7 @@ bool AudioCapture::attach(const std::string &source_name)
 	queue_->clear();
 	dropped_.store(0, std::memory_order_relaxed);
 	muted_.store(0, std::memory_order_relaxed);
+	muted_now_.store(false, std::memory_order_relaxed);
 
 	weak_source_ = obs_source_get_weak_source(source);
 	obs_source_add_audio_capture_callback(source, &AudioCapture::on_audio, this);
@@ -54,6 +55,7 @@ void AudioCapture::detach()
 void AudioCapture::on_audio(void *param, obs_source_t *, const struct audio_data *audio, bool muted)
 {
 	auto *self = static_cast<AudioCapture *>(param);
+	self->muted_now_.store(muted, std::memory_order_relaxed);
 	if (muted) {
 		// ミュート中の音声は外部へ送らない
 		self->muted_.fetch_add(1, std::memory_order_relaxed);

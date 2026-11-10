@@ -36,6 +36,7 @@ bool RealtimeClient::connect(const std::string &url, const std::string &api_key,
 	const CURLcode rc = curl_easy_perform(curl_);
 	long status = 0;
 	curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &status);
+	last_http_status_ = status;
 	if (rc != CURLE_OK) {
 		error = std::string("connect curl=") + curl_easy_strerror(rc) + " http=" + std::to_string(status);
 		close();
