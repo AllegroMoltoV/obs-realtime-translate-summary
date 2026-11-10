@@ -8,21 +8,23 @@
 
 namespace rts {
 
-OpenAiTextGenerator::OpenAiTextGenerator(std::string api_key, ModelProfile profile, int summary_max_chars)
+OpenAiTextGenerator::OpenAiTextGenerator(std::string api_key, ModelProfile translate_profile,
+					 ModelProfile summary_profile, int summary_max_chars)
 	: api_key_(std::move(api_key)),
-	  profile_(std::move(profile)),
+	  translate_profile_(std::move(translate_profile)),
+	  summary_profile_(std::move(summary_profile)),
 	  summary_max_chars_(summary_max_chars)
 {
 }
 
 GenerationResult OpenAiTextGenerator::translate(const std::string &transcript)
 {
-	return send("translate", translate_request(profile_, transcript));
+	return send("translate", translate_request(translate_profile_, transcript));
 }
 
 GenerationResult OpenAiTextGenerator::summarize(const std::vector<std::string> &transcripts)
 {
-	return send("summary", summary_request(profile_, transcripts, summary_max_chars_));
+	return send("summary", summary_request(summary_profile_, transcripts, summary_max_chars_));
 }
 
 GenerationResult OpenAiTextGenerator::send(const char *kind, nlohmann::json request)

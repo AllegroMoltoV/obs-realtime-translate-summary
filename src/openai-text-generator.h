@@ -11,7 +11,8 @@ namespace rts {
 // OpenAI の Responses API で英訳と概要を作る。ログには処理時間とトークン数だけを書き、本文を書かない
 class OpenAiTextGenerator : public TextGenerator {
 public:
-	OpenAiTextGenerator(std::string api_key, ModelProfile profile, int summary_max_chars);
+	OpenAiTextGenerator(std::string api_key, ModelProfile translate_profile, ModelProfile summary_profile,
+			    int summary_max_chars);
 
 	GenerationResult translate(const std::string &transcript) override;
 	GenerationResult summarize(const std::vector<std::string> &transcripts) override;
@@ -21,7 +22,8 @@ private:
 	GenerationResult send(const char *kind, nlohmann::json request);
 
 	std::string api_key_;
-	ModelProfile profile_;
+	ModelProfile translate_profile_;
+	ModelProfile summary_profile_;
 	int summary_max_chars_;
 	std::atomic<bool> cancel_{false};
 	// temperature を拒否されたら、以後は付けずに送る

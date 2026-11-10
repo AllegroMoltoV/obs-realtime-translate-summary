@@ -60,7 +60,8 @@ bool VerifySession::start(const std::string &source_name, const std::string &api
 	produced_samples_ = sent_chunks_ = caption_updates_ = completed_turns_ = router_errors_ = 0;
 
 	if (mode_ == Mode::Full) {
-		generator_ = std::make_unique<OpenAiTextGenerator>(api_key_, ModelProfile{}, kSummaryMaxChars);
+		generator_ = std::make_unique<OpenAiTextGenerator>(api_key_, default_translate_profile(),
+								   default_summary_profile(), kSummaryMaxChars);
 		TextPipeline::Options options;
 		options.summary_max_chars = kSummaryMaxChars;
 		pipeline_ = std::make_unique<TextPipeline>(

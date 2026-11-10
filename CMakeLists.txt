@@ -89,6 +89,17 @@ if(RTS_BUILD_TESTS)
   add_test(NAME rts-core-tests COMMAND rts-core-tests)
 endif()
 
+# 英訳と概要のモデルを比べる開発用の道具。OBS を使わずに Responses API を呼ぶ。CI ではビルドしない
+option(RTS_BUILD_MODEL_EVAL "Build the model comparison tool" OFF)
+if(RTS_BUILD_MODEL_EVAL)
+  add_executable(
+    rts-model-eval
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/model-eval/main.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/text-client.cpp"
+  )
+  target_link_libraries(rts-model-eval PRIVATE rts-core CURL::libcurl)
+endif()
+
 # Windows の開発時に、ビルドの直後に OBS のプラグインのフォルダーへ配置する
 option(ENABLE_POST_BUILD_INSTALL "Run cmake --install after build" ON)
 

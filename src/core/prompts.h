@@ -9,10 +9,21 @@ namespace rts {
 
 // 英訳と概要に使うモデルと推論の設定
 struct ModelProfile {
-	std::string model = "gpt-6-luna";
+	std::string model;
 	std::string reasoning_effort = "none";
 	bool send_temperature = true;
 };
+
+// 2026-11-10 の比較で決めたモデル。根拠は docs/reports/2026-11-10-model-comparison.md
+inline ModelProfile default_translate_profile()
+{
+	return ModelProfile{"gpt-5.6-luna", "none", true};
+}
+
+inline ModelProfile default_summary_profile()
+{
+	return ModelProfile{"gpt-6-luna", "none", true};
+}
 
 // 元のツールの text_processing.py と transcription.py の指示文とスキーマを移した
 std::string translate_instructions();
