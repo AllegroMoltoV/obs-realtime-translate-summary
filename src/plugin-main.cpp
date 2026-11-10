@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
+#include "api-key-store.h"
+#include "settings-dialog.h"
 #include "verify-session.h"
 
 #include <obs-frontend-api.h>
@@ -64,7 +66,8 @@ void log_curl_runtime()
 		info->ssl_version ? info->ssl_version : "none", has_https ? 1 : 0, has_wss ? 1 : 0);
 }
 
-// 段階 1 の検証だけの起動の経路。段階 2 と段階 4 でキーの保存とドックに置き換え、環境変数を読む処理を取り除く
+// 検証だけの起動の経路。音声のソースと動作は段階 4 までは環境変数で指定し、段階 4 でドックに置き換える。
+// API キーは設定画面で保存したものを使う
 void start_verification()
 {
 	if (g_session->running())
@@ -77,12 +80,21 @@ void start_verification()
 	}
 	const auto mode = env_value("RTS_VERIFY_MODE") == "full" ? rts::VerifySession::Mode::Full
 								 : rts::VerifySession::Mode::AudioOnly;
-	const std::string key = env_value("OPENAI_API_KEY");
-	if (mode == rts::VerifySession::Mode::Full && key.empty()) {
-		obs_log(LOG_ERROR, "VERIFY OPENAI_API_KEY is not set");
+	std::string key;
+	if (mode == rts::VerifySession::Mode::Full && rts::load_saved_api_key(key) != rts::ApiKeyStatus::Ok) {
+		obs_log(LOG_ERROR, "VERIFY api key is not saved");
 		return;
 	}
 	g_session->start(source, key, mode);
+}
+
+void open_settings()
+{
+	auto *main_window = static_cast<QWidget *>(obs_frontend_get_main_window());
+	auto *dialog = new rts::SettingsDialog(main_window);
+	dialog->show();
+	dialog->raise();
+	dialog->activateWindow();
 }
 
 void stop_verification()
@@ -123,10 +135,10 @@ bool obs_module_load(void)
 	log_curl_runtime();
 
 	g_session = std::make_unique<rts::VerifySession>();
-	obs_log(LOG_INFO, "VERIFY env OPENAI_API_KEY present=%d RTS_VERIFY_SOURCE present=%d RTS_VERIFY_MODE=%s",
-		env_value("OPENAI_API_KEY").empty() ? 0 : 1, env_value("RTS_VERIFY_SOURCE").empty() ? 0 : 1,
-		env_value("RTS_VERIFY_MODE").c_str());
+	obs_log(LOG_INFO, "VERIFY env RTS_VERIFY_SOURCE present=%d RTS_VERIFY_MODE=%s",
+		env_value("RTS_VERIFY_SOURCE").empty() ? 0 : 1, env_value("RTS_VERIFY_MODE").c_str());
 
+	obs_frontend_add_tools_menu_item(obs_module_text("SettingsMenu"), [](void *) { open_settings(); }, nullptr);
 	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStart"), [](void *) { start_verification(); }, nullptr);
 	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStop"), [](void *) { stop_verification(); }, nullptr);
 	obs_frontend_add_event_callback(on_frontend_event, nullptr);

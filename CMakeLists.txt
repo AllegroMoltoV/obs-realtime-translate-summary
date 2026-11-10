@@ -33,6 +33,10 @@ add_library(rts-core STATIC ${RTS_CORE_SOURCES})
 target_compile_features(rts-core PUBLIC cxx_std_17)
 target_include_directories(rts-core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(rts-core PUBLIC nlohmann_json::nlohmann_json)
+# API キーの暗号化に DPAPI を使う。Windows 以外では未対応を返す実装のためリンクしない
+if(WIN32)
+  target_link_libraries(rts-core PUBLIC crypt32)
+endif()
 # Linux で MODULE へ静的ライブラリをリンクするために必要。テンプレートの plugin-support と同じ扱い
 set_target_properties(rts-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -87,6 +91,12 @@ if(RTS_BUILD_TESTS)
   add_executable(rts-core-tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/core-tests.cpp")
   target_link_libraries(rts-core-tests PRIVATE rts-core)
   add_test(NAME rts-core-tests COMMAND rts-core-tests)
+  # API キーの保存は DPAPI を使うため Windows だけで確かめる
+  if(WIN32)
+    add_executable(rts-api-key-tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/api-key-tests.cpp")
+    target_link_libraries(rts-api-key-tests PRIVATE rts-core)
+    add_test(NAME rts-api-key-tests COMMAND rts-api-key-tests)
+  endif()
 endif()
 
 # 英訳と概要のモデルを比べる開発用の道具。OBS を使わずに Responses API を呼ぶ。CI ではビルドしない
