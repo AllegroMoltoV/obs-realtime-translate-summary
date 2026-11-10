@@ -134,7 +134,7 @@ Anthropic Claude Code was used for almost the entire development process, includ
 
 ## 更新情報
 
-### 次の版 (準備中)
+### v1.0.0
 
 - 最初の公開
 
