@@ -1,0 +1,101 @@
+===== 2026-11-10 16-48-51.txt (realtime-translate-summary の行と終了の行だけを抜粋。本文は含まない) =====
+16:48:52.915: [realtime-translate-summary] libcurl runtime version=8.12.1-DEV ssl=Schannel https=1 wss=1
+16:48:52.916: [realtime-translate-summary] VERIFY env OPENAI_API_KEY present=1 RTS_VERIFY_SOURCE present=1 RTS_VERIFY_MODE=full
+16:48:52.916: [realtime-translate-summary] plugin loaded successfully (version 0.1.0)
+16:49:03.330: [realtime-translate-summary] VERIFY autostart
+16:49:04.231: [realtime-translate-summary] realtime connected http=101
+16:49:04.231: [realtime-translate-summary] VERIFY started mode=full input_rate=44100
+16:49:04.237: [realtime-translate-summary] VERIFY event session.created
+16:49:04.372: [realtime-translate-summary] VERIFY event session.updated
+16:49:13.482: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:14.235: [realtime-translate-summary] VERIFY metrics elapsed_s=10.0 produced_s=10.00 ratio=0.9996 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=99 caption_updates=0 completed=0 router_errors=0 total_frames=605 lagged_frames=322
+16:49:14.888: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:14.888: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:14.888: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:15.436: [realtime-translate-summary] VERIFY event completed chars=0
+16:49:15.486: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:16.888: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:16.888: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:16.893: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:17.435: [realtime-translate-summary] VERIFY event completed chars=6
+16:49:17.681: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:19.089: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:19.090: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:19.090: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:19.163: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1727.5 input_tokens=53 cached_tokens=0 output_tokens=6 reasoning_tokens=0 output_chars=6 error_type= error_code= error_param= transport=
+16:49:19.163: [realtime-translate-summary] VERIFY english chars=6
+16:49:19.520: [realtime-translate-summary] VERIFY event completed chars=7
+16:49:20.339: [realtime-translate-summary] summary http=200 ok=1 elapsed_ms=2903.6 input_tokens=719 cached_tokens=0 output_tokens=16 reasoning_tokens=0 output_chars=34 error_type= error_code= error_param= transport=
+16:49:20.339: [realtime-translate-summary] VERIFY summary line_chars=6,0,0
+16:49:20.440: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=919.8 input_tokens=56 cached_tokens=0 output_tokens=7 reasoning_tokens=0 output_chars=9 error_type= error_code= error_param= transport=
+16:49:20.440: [realtime-translate-summary] VERIFY english chars=9
+16:49:22.284: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:23.784: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:23.790: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:23.790: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:24.084: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:24.205: [realtime-translate-summary] VERIFY event completed chars=7
+16:49:24.240: [realtime-translate-summary] VERIFY metrics elapsed_s=20.0 produced_s=20.01 ratio=1.0000 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=200 caption_updates=15 completed=3 router_errors=0 total_frames=905 lagged_frames=322
+16:49:25.154: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=948.2 input_tokens=56 cached_tokens=0 output_tokens=7 reasoning_tokens=0 output_chars=10 error_type= error_code= error_param= transport=
+16:49:25.154: [realtime-translate-summary] VERIFY english chars=10
+16:49:25.188: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:25.188: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:25.188: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:25.195: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:25.627: [realtime-translate-summary] VERIFY event completed chars=4
+16:49:26.563: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=935.7 input_tokens=54 cached_tokens=0 output_tokens=6 reasoning_tokens=0 output_chars=8 error_type= error_code= error_param= transport=
+16:49:26.563: [realtime-translate-summary] VERIFY english chars=8
+16:49:27.291: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:27.291: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:27.291: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:27.585: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:27.765: [realtime-translate-summary] VERIFY event completed chars=14
+16:49:29.187: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:29.187: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:29.187: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:29.470: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1704.2 input_tokens=60 cached_tokens=0 output_tokens=10 reasoning_tokens=0 output_chars=25 error_type= error_code= error_param= transport=
+16:49:29.470: [realtime-translate-summary] VERIFY english chars=25
+16:49:29.738: [realtime-translate-summary] VERIFY event completed chars=10
+16:49:30.584: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:30.813: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1073.8 input_tokens=58 cached_tokens=0 output_tokens=9 reasoning_tokens=0 output_chars=17 error_type= error_code= error_param= transport=
+16:49:30.813: [realtime-translate-summary] VERIFY english chars=17
+16:49:31.991: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:31.991: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:31.991: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:32.527: [realtime-translate-summary] VERIFY event completed chars=9
+16:49:32.785: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:33.258: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=730.7 input_tokens=57 cached_tokens=0 output_tokens=9 reasoning_tokens=0 output_chars=17 error_type= error_code= error_param= transport=
+16:49:33.258: [realtime-translate-summary] VERIFY english chars=17
+16:49:34.190: [realtime-translate-summary] summary http=200 ok=1 elapsed_ms=1663.0 input_tokens=760 cached_tokens=0 output_tokens=28 reasoning_tokens=0 output_chars=50 error_type= error_code= error_param= transport=
+16:49:34.191: [realtime-translate-summary] VERIFY summary line_chars=22,0,0
+16:49:34.242: [realtime-translate-summary] VERIFY metrics elapsed_s=30.0 produced_s=30.01 ratio=1.0000 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=300 caption_updates=44 completed=7 router_errors=0 total_frames=1205 lagged_frames=322
+16:49:34.386: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:34.386: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:34.386: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:34.901: [realtime-translate-summary] VERIFY event completed chars=10
+16:49:35.486: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:36.078: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1176.0 input_tokens=58 cached_tokens=0 output_tokens=9 reasoning_tokens=0 output_chars=25 error_type= error_code= error_param= transport=
+16:49:36.078: [realtime-translate-summary] VERIFY english chars=25
+16:49:37.887: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:37.887: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:37.887: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:38.084: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_started
+16:49:38.414: [realtime-translate-summary] VERIFY event completed chars=22
+16:49:39.440: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1025.1 input_tokens=70 cached_tokens=0 output_tokens=15 reasoning_tokens=0 output_chars=51 error_type= error_code= error_param= transport=
+16:49:39.440: [realtime-translate-summary] VERIFY english chars=51
+16:49:41.288: [realtime-translate-summary] VERIFY event input_audio_buffer.speech_stopped
+16:49:41.288: [realtime-translate-summary] VERIFY event conversation.item.added
+16:49:41.288: [realtime-translate-summary] VERIFY event conversation.item.done
+16:49:41.781: [realtime-translate-summary] VERIFY event completed chars=28
+16:49:42.936: [realtime-translate-summary] translate http=200 ok=1 elapsed_ms=1154.5 input_tokens=71 cached_tokens=0 output_tokens=20 reasoning_tokens=0 output_chars=73 error_type= error_code= error_param= transport=
+16:49:42.936: [realtime-translate-summary] VERIFY english chars=73
+16:49:44.245: [realtime-translate-summary] VERIFY metrics elapsed_s=40.0 produced_s=40.01 ratio=0.9999 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=400 caption_updates=89 completed=10 router_errors=0 total_frames=1505 lagged_frames=322
+16:49:54.246: [realtime-translate-summary] VERIFY metrics elapsed_s=50.0 produced_s=50.01 ratio=0.9999 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=500 caption_updates=89 completed=10 router_errors=0 total_frames=1805 lagged_frames=322
+16:49:55.579: ==== Shutting down ==================================================
+16:49:56.016: [realtime-translate-summary] VERIFY metrics elapsed_s=51.8 produced_s=51.45 ratio=0.9935 queued=0 dropped_frames=0 muted_callbacks=0 sent_chunks=514 caption_updates=89 completed=10 router_errors=0 total_frames=1858 lagged_frames=322
+16:49:56.017: [realtime-translate-summary] VERIFY pipeline translations_ok=10 failed=0 stale=0 summaries_ok=2 failed=0 invalid=0 exceptions=0
+16:49:56.018: [realtime-translate-summary] VERIFY stopped
+16:49:56.185: [realtime-translate-summary] plugin unloaded
+16:49:56.187: [obs-websocket] [obs_module_unload] Shutting down...
+16:49:56.189: [obs-websocket] [obs_module_unload] Finished shutting down.
+16:49:56.561: Number of memory leaks: 0
