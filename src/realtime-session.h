@@ -69,8 +69,9 @@ public:
 	long long input_tokens() const { return input_tokens_.load(); }
 	long long output_tokens() const { return output_tokens_.load(); }
 	double elapsed_seconds() const;
-	// 英訳と概要の失敗の件数。ドックの警告に使う
-	int text_failures() const { return text_failures_.load(); }
+	// 英訳と概要の直近の要求が失敗しているか。次の成功で偽に戻る。ドックの警告に使う
+	bool translate_failing() const { return translate_failing_.load(); }
+	bool summary_failing() const { return summary_failing_.load(); }
 
 private:
 	using Clock = std::chrono::steady_clock;
@@ -102,7 +103,9 @@ private:
 	std::atomic<long long> input_tokens_{0};
 	std::atomic<long long> output_tokens_{0};
 	std::atomic<int64_t> started_ns_{0};
-	std::atomic<int> text_failures_{0};
+	// 英訳と概要の直近の要求が失敗しているか。ドックの警告に使う
+	std::atomic<bool> translate_failing_{false};
+	std::atomic<bool> summary_failing_{false};
 
 	// 通信のスレッドだけが触る
 	Clock::time_point last_metrics_{};

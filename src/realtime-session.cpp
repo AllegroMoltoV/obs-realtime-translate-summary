@@ -91,13 +91,15 @@ bool RealtimeSession::start(const SessionConfig &config, OutputFn on_output)
 
 	generator_ = std::make_unique<OpenAiTextGenerator>(config_.api_key, default_translate_profile(),
 							   default_summary_profile(), config_.summary_max_chars);
-	text_failures_ = 0;
+	translate_failing_ = false;
+	summary_failing_ = false;
 	generator_->on_usage = [this](long long in, long long out) {
 		input_tokens_ += in;
 		output_tokens_ += out;
 	};
-	generator_->on_failure = [this] {
-		++text_failures_;
+	// 直近の要求の成否だけを持つ。一時的な失敗の警告が、その後の成功の後も出続けないようにするため
+	generator_->on_result = [this](bool is_summary, bool ok) {
+		(is_summary ? summary_failing_ : translate_failing_) = !ok;
 	};
 	TextPipeline::Options options;
 	options.summary_max_chars = config_.summary_max_chars;

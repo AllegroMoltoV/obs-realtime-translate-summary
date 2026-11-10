@@ -21,8 +21,8 @@ public:
 
 	// 入力と出力のトークン数を受け取る。作業のスレッドから呼ばれる
 	std::function<void(long long input_tokens, long long output_tokens)> on_usage;
-	// 停止による中断を除く失敗で呼ばれる。作業のスレッドから呼ばれる
-	std::function<void()> on_failure;
+	// 要求の結果を受け取る。停止による中断は呼ばない。is_summary が偽なら英訳。作業のスレッドから呼ばれる
+	std::function<void(bool is_summary, bool ok)> on_result;
 
 private:
 	GenerationResult send(const char *kind, nlohmann::json request);

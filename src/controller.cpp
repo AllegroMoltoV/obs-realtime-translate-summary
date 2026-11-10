@@ -184,7 +184,8 @@ Controller::Status Controller::status() const
 	s.input_tokens = session_.input_tokens();
 	s.output_tokens = session_.output_tokens();
 	s.muted = session_.muted();
-	s.text_failures = session_.text_failures();
+	s.translate_failing = session_.translate_failing();
+	s.summary_failing = session_.summary_failing();
 	s.retry_attempt = session_.retry_attempt();
 	s.max_retries = session_.max_retries();
 	return s;

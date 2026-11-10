@@ -275,8 +275,10 @@ void Dock::update_status()
 		details << text(problem_key(problem));
 	if (active && status.muted)
 		details << text("Dock.Muted");
-	if (active && status.text_failures > 0)
-		details << text("Dock.TextFailures").arg(status.text_failures);
+	if (active && status.translate_failing)
+		details << text("Dock.TranslateFailing");
+	if (active && status.summary_failing)
+		details << text("Dock.SummaryFailing");
 
 	status_label_->setText(text("Dock.Status") + " " + state);
 	detail_label_->setText(details.join("\n"));

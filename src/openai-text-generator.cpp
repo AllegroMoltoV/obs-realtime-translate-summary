@@ -50,8 +50,8 @@ GenerationResult OpenAiTextGenerator::send(const char *kind, nlohmann::json requ
 		codepoint_length(result.output_text), result.error_type.c_str(), result.error_code.c_str(),
 		result.error_param.c_str(), result.transport_error.c_str());
 
-	if (on_failure && !result.ok && !cancel_.load())
-		on_failure();
+	if (on_result && !cancel_.load())
+		on_result(std::string(kind) == "summary", result.ok);
 	if (on_usage && (result.input_tokens > 0 || result.output_tokens > 0))
 		on_usage(result.input_tokens > 0 ? result.input_tokens : 0,
 			 result.output_tokens > 0 ? result.output_tokens : 0);

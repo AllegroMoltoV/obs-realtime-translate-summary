@@ -43,7 +43,8 @@ public:
 		long long input_tokens = 0;
 		long long output_tokens = 0;
 		bool muted = false;
-		int text_failures = 0;
+		bool translate_failing = false;
+		bool summary_failing = false;
 		int retry_attempt = 0;
 		int max_retries = 0;
 		bool auto_stopped = false;
