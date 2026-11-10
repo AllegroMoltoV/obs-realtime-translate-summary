@@ -93,14 +93,18 @@ void stop_verification()
 void on_frontend_event(enum obs_frontend_event event, void *)
 {
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+		if (env_value("RTS_VERIFY_AUTOSTART") == "1") {
+			obs_log(LOG_INFO, "VERIFY autostart");
+			start_verification();
+		}
+
 		const int seconds = std::atoi(env_value("RTS_VERIFY_AUTOQUIT_SECONDS").c_str());
 		if (seconds <= 0)
 			return;
 
 		// 管理者として動く OBS には外のプロセスから終了を要求できないため、検証の終わりに OBS の中から閉じる
 		auto *main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
-		obs_log(LOG_INFO, "VERIFY autostart autoquit_seconds=%d", seconds);
-		start_verification();
+		obs_log(LOG_INFO, "VERIFY autoquit_seconds=%d", seconds);
 		QTimer::singleShot(seconds * 1000, main_window, [main_window]() {
 			stop_verification();
 			obs_log(LOG_INFO, "VERIFY autoquit closing main window");
