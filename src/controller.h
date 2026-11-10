@@ -17,7 +17,7 @@ public:
 
 	// 開始の条件を満たさない場合は false を返し、problems() に理由を残す
 	bool start();
-	// 停止して、選んでいた表示先の text を空にする
+	// 停止して、選んでいた表示先を停止中の表示 (仮の文字列か空) に戻す
 	void stop();
 	bool active() const { return active_; }
 
@@ -27,8 +27,11 @@ public:
 	// ソースの削除と名前の変更。動作中に使っているソースが消えたら止める
 	void on_source_removed(const std::string &name);
 
-	// 選択の読み込みの後に、異常終了で残った本文を消す
-	void clear_selected_targets();
+	// 停止中に、選んでいる表示先を停止中の表示にする。選択の読み込みの後 (異常終了で残った本文を消す)、
+	// 選択の変更の後、設定の変更の後に呼ぶ
+	void show_idle_on_selected_targets();
+	// 停止中に、選択から外した表示先を空に戻す
+	void clear_target(const std::string &name);
 
 	struct Status {
 		SessionState state = SessionState::Stopped;
@@ -47,7 +50,7 @@ public:
 private:
 	Controller() = default;
 	StartInputs collect_start_inputs() const;
-	void clear_targets(const std::array<std::string, 3> &targets);
+	void write_targets(const std::array<std::string, 3> &targets, bool idle);
 
 	RealtimeSession session_;
 	bool active_ = false;

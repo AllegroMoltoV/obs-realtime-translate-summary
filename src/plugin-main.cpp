@@ -183,7 +183,7 @@ void on_save(obs_data_t *save_data, bool saving, void *)
 	load_hotkey(obj, "hotkey_stop", g_hotkey_stop);
 	obs_data_release(obj);
 	// 異常終了で残った本文を消す
-	rts::Controller::instance().clear_selected_targets();
+	rts::Controller::instance().show_idle_on_selected_targets();
 	request_dock_refresh();
 }
 

@@ -2,6 +2,7 @@
 
 #include <QDialog>
 
+class QCheckBox;
 class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
@@ -34,6 +35,7 @@ private:
 	QLabel *keywords_message_label_ = nullptr;
 	QSpinBox *max_chars_spin_ = nullptr;
 	QDoubleSpinBox *interval_spin_ = nullptr;
+	QCheckBox *placeholders_check_ = nullptr;
 };
 
 } // namespace rts

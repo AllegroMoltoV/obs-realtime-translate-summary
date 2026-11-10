@@ -19,6 +19,8 @@ struct GlobalSettings {
 	std::string keywords_text; // 1 行 1 語句
 	int summary_max_chars = 30;
 	double summary_interval_seconds = 10.0;
+	// 停止中に表示先へ仮の文字列を出す。配置や見た目を開始の前に調整できるようにするため
+	bool show_placeholders = true;
 };
 
 // 設定の保持。シーンコレクションの読み込みはドックの作成より前に呼ばれるため、ドックとは別に持つ

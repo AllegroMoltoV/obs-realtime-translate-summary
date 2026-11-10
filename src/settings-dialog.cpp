@@ -1,6 +1,7 @@
 #include "settings-dialog.h"
 
 #include "api-key-store.h"
+#include "controller.h"
 #include "core/keywords.h"
 #include "core/start-check.h"
 #include "core/summary-parser.h"
@@ -8,6 +9,7 @@
 
 #include <obs-module.h>
 
+#include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
@@ -62,11 +64,15 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 	auto *issue_label = new QLabel(text("Settings.ApiKey.Issue"), key_group);
 	issue_label->setTextFormat(Qt::RichText);
 	issue_label->setOpenExternalLinks(true);
+	// プラグインは無料で、OpenAI API の利用料金は利用者の負担であることを示す
+	auto *cost_label = new QLabel(text("Settings.ApiKey.Cost"), key_group);
+	cost_label->setWordWrap(true);
 	auto *key_layout = new QVBoxLayout(key_group);
 	key_layout->addWidget(status_label_);
 	key_layout->addLayout(input_row);
 	key_layout->addWidget(key_message_label_);
 	key_layout->addWidget(issue_label);
+	key_layout->addWidget(cost_label);
 
 	// 固有名詞のヒントと概要の値
 	const GlobalSettings global = PluginSettings::instance().global();
@@ -88,6 +94,9 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 	options_layout->addRow(QString(), keywords_message_label_);
 	options_layout->addRow(text("Settings.MaxChars"), max_chars_spin_);
 	options_layout->addRow(text("Settings.Interval"), interval_spin_);
+	placeholders_check_ = new QCheckBox(text("Settings.Placeholders"), options_group);
+	placeholders_check_->setChecked(global.show_placeholders);
+	options_layout->addRow(QString(), placeholders_check_);
 	options_layout->addRow(QString(), new QLabel(text("Settings.AppliesNext"), options_group));
 
 	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -171,7 +180,10 @@ void SettingsDialog::on_accept()
 	settings.keywords_text = keywords;
 	settings.summary_max_chars = max_chars_spin_->value();
 	settings.summary_interval_seconds = interval_spin_->value();
+	settings.show_placeholders = placeholders_check_->isChecked();
 	PluginSettings::instance().set_global(settings);
+	// 仮の文字列の表示の切り替えを、停止中ならすぐ表示先に反映する
+	Controller::instance().show_idle_on_selected_targets();
 	accept();
 }
 

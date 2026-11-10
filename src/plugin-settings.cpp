@@ -67,6 +67,8 @@ void PluginSettings::load_global()
 		if (valid_summary_interval(value))
 			loaded.summary_interval_seconds = value;
 	}
+	if (obs_data_has_user_value(data, "show_placeholders"))
+		loaded.show_placeholders = obs_data_get_bool(data, "show_placeholders");
 	obs_data_release(data);
 
 	std::lock_guard<std::mutex> lock(mutex_);
@@ -88,6 +90,7 @@ void PluginSettings::save_global_locked() const
 	obs_data_set_string(data, "keywords", global_.keywords_text.c_str());
 	obs_data_set_int(data, "summary_max_chars", global_.summary_max_chars);
 	obs_data_set_double(data, "summary_interval_seconds", global_.summary_interval_seconds);
+	obs_data_set_bool(data, "show_placeholders", global_.show_placeholders);
 	if (!obs_data_save_json_safe(data, path, "tmp", "bak"))
 		obs_log(LOG_WARNING, "settings.json save failed");
 	obs_data_release(data);

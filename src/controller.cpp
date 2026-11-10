@@ -5,6 +5,7 @@
 #include "plugin-settings.h"
 #include "text-output.h"
 
+#include <obs-module.h>
 #include <obs.h>
 #include <plugin-support.h>
 
@@ -77,7 +78,7 @@ bool Controller::start()
 
 	active_targets_ = selection.targets;
 	active_audio_ = selection.audio_source;
-	clear_targets(active_targets_);
+	write_targets(active_targets_, false);
 
 	const uint64_t generation = ++generation_;
 	const auto targets = active_targets_;
@@ -103,7 +104,7 @@ void Controller::stop()
 	last_status_ = status();
 	active_ = false;
 	++generation_;
-	clear_targets(active_targets_);
+	write_targets(active_targets_, true);
 	obs_log(LOG_INFO, "controller stopped");
 }
 
@@ -127,17 +128,29 @@ void Controller::on_source_removed(const std::string &name)
 	last_status_.source_removed = true;
 }
 
-void Controller::clear_selected_targets()
+void Controller::show_idle_on_selected_targets()
 {
-	clear_targets(PluginSettings::instance().selection().targets);
+	if (!active_)
+		write_targets(PluginSettings::instance().selection().targets, true);
 }
 
-void Controller::clear_targets(const std::array<std::string, 3> &targets)
+void Controller::clear_target(const std::string &name)
 {
-	for (const auto &target : targets) {
+	bool is_text = false;
+	if (!active_ && source_exists(name, &is_text) && is_text)
+		set_source_text(name, "");
+}
+
+// idle が真なら停止中の表示 (設定により仮の文字列か空)、偽なら空を書く。字幕の本文は残さない
+void Controller::write_targets(const std::array<std::string, 3> &targets, bool idle)
+{
+	static constexpr const char *kPlaceholderKeys[3] = {"Placeholder.Japanese", "Placeholder.English",
+							    "Placeholder.Summary"};
+	const bool placeholders = idle && PluginSettings::instance().global().show_placeholders;
+	for (size_t i = 0; i < targets.size(); ++i) {
 		bool is_text = false;
-		if (source_exists(target, &is_text) && is_text)
-			set_source_text(target, "");
+		if (source_exists(targets[i], &is_text) && is_text)
+			set_source_text(targets[i], placeholders ? obs_module_text(kPlaceholderKeys[i]) : "");
 	}
 }
 

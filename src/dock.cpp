@@ -205,11 +205,23 @@ void Dock::on_selection_changed()
 {
 	if (refreshing_)
 		return;
+	const SourceSelection previous = PluginSettings::instance().selection();
 	SourceSelection selection;
 	selection.audio_source = audio_combo_->currentData().toString().toStdString();
 	for (size_t i = 0; i < 3; ++i)
 		selection.targets[i] = target_combos_[i]->currentData().toString().toStdString();
 	PluginSettings::instance().set_selection(selection);
+
+	// 選択から外した表示先の仮の文字列を消し、新しく選んだ表示先に出す
+	auto &controller = Controller::instance();
+	for (const auto &old_target : previous.targets) {
+		bool still_selected = false;
+		for (const auto &target : selection.targets)
+			still_selected = still_selected || target == old_target;
+		if (!still_selected)
+			controller.clear_target(old_target);
+	}
+	controller.show_idle_on_selected_targets();
 }
 
 void Dock::on_toggle()
