@@ -33,18 +33,19 @@ std::string summary_instructions(int max_chars)
 	const int line_limit = max_chars - 2;
 	// Windows の min マクロとの衝突を避けるため、かっこで囲んで呼ぶ
 	const int target = (std::min)(static_cast<int>(max_chars * 0.8 + 0.5), line_limit);
-	return std::string("日本語の一人語り配信を要約する。recent_transcriptsは直近5分間に確定した発言を古い順に並べたもの。"
-			   "この発言に含まれる内容だけを使い、発言にない配信内容、予定、募集、視聴者への呼びかけを加えない。"
-			   "例えば「今日はピアノを弾きます」だけなら、演奏することだけを1行に書き、リクエスト募集は書かない。"
-			   "過去に終えた行は過去形、今している行は進行中の形、これからする行は予定や意向を示す形で述語まで書く。"
-			   "発言の時点と時制を変えず、条件付きの予定を断定しない。"
-			   "後の発言で話題や予定が変わった場合は新しい発言を優先する。"
-			   "display_linesはOBSへ表示する日本語で、見出しや単語の羅列ではなく、発言した対象、動作、順序が伝わる文にする。"
-			   "まず同じ対象について述べた内容を1つの話題にまとめ、話題ごとに1行で最大3行にする。"
-			   "例えば果物としてリンゴ、バナナ、ミカンを挙げた場合は種類を1行に列挙し、果物の行を増やさない。"
-			   "同じ話題の列挙が1行の上限内に収まる場合は、挙げられた種類を省かず1行にまとめる。"
-			   "列挙された固有の種類は「など」「等」で省略せず、説明語を短くして全種類を先に残す。"
-			   "同じ話題を分割して3行を埋めない。各行の最大文字数は") +
+	return std::string(
+		       "日本語の一人語り配信を要約する。recent_transcriptsは直近5分間に確定した発言を古い順に並べたもの。"
+		       "この発言に含まれる内容だけを使い、発言にない配信内容、予定、募集、視聴者への呼びかけを加えない。"
+		       "例えば「今日はピアノを弾きます」だけなら、演奏することだけを1行に書き、リクエスト募集は書かない。"
+		       "過去に終えた行は過去形、今している行は進行中の形、これからする行は予定や意向を示す形で述語まで書く。"
+		       "発言の時点と時制を変えず、条件付きの予定を断定しない。"
+		       "後の発言で話題や予定が変わった場合は新しい発言を優先する。"
+		       "display_linesはOBSへ表示する日本語で、見出しや単語の羅列ではなく、発言した対象、動作、順序が伝わる文にする。"
+		       "まず同じ対象について述べた内容を1つの話題にまとめ、話題ごとに1行で最大3行にする。"
+		       "例えば果物としてリンゴ、バナナ、ミカンを挙げた場合は種類を1行に列挙し、果物の行を増やさない。"
+		       "同じ話題の列挙が1行の上限内に収まる場合は、挙げられた種類を省かず1行にまとめる。"
+		       "列挙された固有の種類は「など」「等」で省略せず、説明語を短くして全種類を先に残す。"
+		       "同じ話題を分割して3行を埋めない。各行の最大文字数は") +
 	       std::to_string(line_limit) +
 	       "文字とし、必ずこの上限以内に収める。"
 	       "文字数はUTF-8のバイト数や英単語数ではなく、漢字、ひらがな、カタカナ、英数字、記号をそれぞれ1文字として数える。"
@@ -325,12 +326,9 @@ void VerifySession::text_loop()
 void VerifySession::translate(const std::string &transcript)
 {
 	TextClient client(api_key_);
-	json request = {{"model", kTextModel},
-			{"instructions", kTranslateInstructions},
-			{"input", transcript},
-			{"reasoning", {{"effort", "none"}}},
-			{"max_output_tokens", 256},
-			{"store", false}};
+	json request = {{"model", kTextModel},      {"instructions", kTranslateInstructions},
+			{"input", transcript},      {"reasoning", {{"effort", "none"}}},
+			{"max_output_tokens", 256}, {"store", false}};
 	const bool with_temperature = !omit_temperature_.load();
 	if (with_temperature)
 		request["temperature"] = 0.2;
@@ -362,15 +360,16 @@ void VerifySession::summarize()
 	}
 
 	TextClient client(api_key_);
-	json request = {{"model", kTextModel},
-			{"instructions", summary_instructions(kSummaryMaxChars)},
-			{"input", json{{"recent_transcripts", transcripts}}.dump()},
-			{"reasoning", {{"effort", "none"}}},
-			{"max_output_tokens", 512},
-			{"store", false},
-			{"text",
-			 {{"format",
-			   {{"type", "json_schema"}, {"name", "summary"}, {"strict", true}, {"schema", summary_schema()}}}}}};
+	json request = {
+		{"model", kTextModel},
+		{"instructions", summary_instructions(kSummaryMaxChars)},
+		{"input", json{{"recent_transcripts", transcripts}}.dump()},
+		{"reasoning", {{"effort", "none"}}},
+		{"max_output_tokens", 512},
+		{"store", false},
+		{"text",
+		 {{"format",
+		   {{"type", "json_schema"}, {"name", "summary"}, {"strict", true}, {"schema", summary_schema()}}}}}};
 	const bool with_temperature = !omit_temperature_.load();
 	if (with_temperature)
 		request["temperature"] = 0.0;

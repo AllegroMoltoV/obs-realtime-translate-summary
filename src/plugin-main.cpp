@@ -76,7 +76,7 @@ void start_verification()
 		return;
 	}
 	const auto mode = env_value("RTS_VERIFY_MODE") == "full" ? rts::VerifySession::Mode::Full
-								  : rts::VerifySession::Mode::AudioOnly;
+								 : rts::VerifySession::Mode::AudioOnly;
 	const std::string key = env_value("OPENAI_API_KEY");
 	if (mode == rts::VerifySession::Mode::Full && key.empty()) {
 		obs_log(LOG_ERROR, "VERIFY OPENAI_API_KEY is not set");
@@ -127,10 +127,8 @@ bool obs_module_load(void)
 		env_value("OPENAI_API_KEY").empty() ? 0 : 1, env_value("RTS_VERIFY_SOURCE").empty() ? 0 : 1,
 		env_value("RTS_VERIFY_MODE").c_str());
 
-	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStart"), [](void *) { start_verification(); },
-					 nullptr);
-	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStop"), [](void *) { stop_verification(); },
-					 nullptr);
+	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStart"), [](void *) { start_verification(); }, nullptr);
+	obs_frontend_add_tools_menu_item(obs_module_text("VerifyStop"), [](void *) { stop_verification(); }, nullptr);
 	obs_frontend_add_event_callback(on_frontend_event, nullptr);
 
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
