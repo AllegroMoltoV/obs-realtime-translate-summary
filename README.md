@@ -136,6 +136,10 @@ Anthropic Claude Code was used for almost the entire development process, includ
 
 ## 更新情報
 
+### v1.0.2
+
+- macOS と Linux 向けの配布物を出さないようにしました。このプラグインは API キーの保存が Windows だけに対応しており、macOS と Linux では使えません。v1.0.1 のリリースには CI が作った macOS と Linux の配布物が含まれますが、使えません。プラグインの動作は v1.0.1 と同じです。
+
 ### v1.0.1
 
 - リリースの配布物にビルドの来歴の証明 (GitHub Artifact Attestation) を付けるようにしました。プラグインの動作は v1.0.0 と同じです。
