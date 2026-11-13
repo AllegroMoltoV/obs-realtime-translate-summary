@@ -101,7 +101,7 @@ jobs:
           shopt -s extglob
 
           echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
-          for file in ${{ github.workspace }}/@(*.exe|*.deb|*.ddeb|*.pkg|*.tar.xz|*.zip); do
+          for file in ${{ github.workspace }}/@(*.exe|*.tar.xz|*.zip); do
             echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
           done
 
@@ -114,7 +114,8 @@ jobs:
           shopt -s nullglob
 
           cd ${{ github.workspace }}
-          files=(@(*.exe|*.zip|*.pkg|*.deb|*.ddeb|*.tar.xz))
+          # API キーの保存が Windows だけに対応しているため、macOS と Linux の配布物は出さない
+          files=(@(*.exe|*.zip|*.tar.xz))
           sha256sum "${files[@]}" > ${{ runner.temp }}/release-checksums.txt
 
       # 配信プラグイン倉庫くんの掲載の条件: リリースのすべての配布物に、このタグのビルドの来歴の証明を付ける
@@ -137,7 +138,4 @@ jobs:
           files: |
             ${{ github.workspace }}/*.exe
             ${{ github.workspace }}/*.zip
-            ${{ github.workspace }}/*.pkg
-            ${{ github.workspace }}/*.deb
-            ${{ github.workspace }}/*.ddeb
             ${{ github.workspace }}/*.tar.xz
